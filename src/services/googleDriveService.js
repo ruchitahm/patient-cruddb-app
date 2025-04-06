@@ -98,4 +98,46 @@ export async function listGoogleSheets() {
     }
   };
   
+  export const updatePatientData = async (spreadsheetId, rowIndex, data) => {
+    const values = [[
+      data.firstName,
+      data.lastName,
+      data.phone,
+      data.age,
+      data.gender,
+      data.visitDate,
+      data.nextVisit
+    ]];
+  
+    const range = `Sheet1!A${rowIndex + 1}:G${rowIndex + 1}`;
+  
+    try {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
+      console.log('Patient updated');
+    } catch (error) {
+      console.error('Update error:', error);
+    }
+  };
+  
+  export const deletePatientData = async (spreadsheetId, rowIndex) => {
+    const emptyRow = [['', '', '', '', '', '', '']];
+    const range = `Sheet1!A${rowIndex + 1}:G${rowIndex + 1}`;
+  
+    try {
+      await gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'RAW',
+        resource: { values: emptyRow },
+      });
+      console.log('Patient deleted');
+    } catch (error) {
+      console.error('Delete error:', error);
+    }
+  };
   

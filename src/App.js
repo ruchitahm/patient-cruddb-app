@@ -23,6 +23,8 @@ import {
   getSheetData,
   loadSheetsAPI,
   appendPatientData,
+  deletePatientData,
+  updatePatientData
 } from './services/googleDriveService';
 import PatientForm from './components/PatientForm';
 
@@ -31,6 +33,9 @@ function App() {
   const [selectedSheetId, setSelectedSheetId] = useState(null);
   const [sheetData, setSheetData] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editData, setEditData] = useState(null);
+const [editMode, setEditMode] = useState(false);
+
 
   useEffect(() => {
     initGoogleAPI();
@@ -74,6 +79,34 @@ function App() {
     setSheetData(updatedData);
   };
 
+  const handleEdit = (index) => {
+    const row = sheetData[index];
+    const [firstName, lastName, phone, age, gender, visitDate, nextVisit] = row;
+    setEditData({ firstName, lastName, phone, age, gender, visitDate, nextVisit, rowIndex: index });
+    setEditMode(true);
+    setShowForm(true);
+  };
+  
+  const handleDelete = async (index) => {
+    await deletePatientData(selectedSheetId, index);
+    const updatedData = await getSheetData(selectedSheetId);
+    setSheetData(updatedData);
+  };
+  
+  const handleFormSubmit = async (data) => {
+    if (editMode && data.rowIndex != null) {
+      await updatePatientData(selectedSheetId, data.rowIndex, data);
+    } else {
+      await appendPatientData(selectedSheetId, data);
+    }
+  
+    const updatedData = await getSheetData(selectedSheetId);
+    setSheetData(updatedData);
+    setEditMode(false);
+    setEditData(null);
+  };
+
+  
   return (
     <>
       <AppBar position="static">
@@ -120,22 +153,35 @@ function App() {
                 <Table>
                   {sheetData.length > 0 && (
                     <>
-                      <TableHead>
-                        <TableRow>
-                          {sheetData[0].map((header, idx) => (
-                            <TableCell key={idx}>{header}</TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {sheetData.slice(1).map((row, i) => (
-                          <TableRow key={i}>
-                            {row.map((cell, j) => (
-                              <TableCell key={j}>{cell}</TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
+                     <TableHead>
+  <TableRow>
+    {sheetData[0].map((header, idx) => (
+      <TableCell key={idx}>{header}</TableCell>
+    ))}
+    <TableCell>Actions</TableCell>
+  </TableRow>
+</TableHead>
+
+<TableBody>
+  {sheetData.slice(1).map((row, i) => {
+    const actualIndex = i + 1; // offset for header
+    const rowKey = row.join('-') + actualIndex; // make key more unique
+
+    return (
+      <TableRow key={rowKey}>
+        {row.map((cell, j) => (
+          <TableCell key={j}>{cell}</TableCell>
+        ))}
+        <TableCell>
+          <Button onClick={() => handleEdit(actualIndex)} size="small">Edit</Button>
+          <Button onClick={() => handleDelete(actualIndex)} size="small" color="error">Delete</Button>
+        </TableCell>
+      </TableRow>
+    );
+  })}
+</TableBody>
+
+
                     </>
                   )}
                 </Table>
@@ -146,10 +192,17 @@ function App() {
       </Container>
 
       <PatientForm
-        open={showForm}
-        handleClose={() => setShowForm(false)}
-        handleSubmit={handleAddPatient}
-      />
+  open={showForm}
+  handleClose={() => {
+    setShowForm(false);
+    setEditData(null);
+    setEditMode(false);
+  }}
+  handleSubmit={handleFormSubmit}
+  editMode={editMode}
+  editData={editData}
+/>
+
     </>
   );
 }
