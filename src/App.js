@@ -6,13 +6,13 @@ import {
   Button,
   Container,
   Grid,
-  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableRow,
   TableHead,
+  TableRow,
+  Paper,
   TextField
 } from '@mui/material';
 import {
@@ -39,6 +39,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [readOnlyView, setReadOnlyView] = useState(false);
+
 
   useEffect(() => {
     initGoogleAPI();
@@ -76,16 +78,20 @@ function App() {
     setSheetData(data);
   };
 
-  const handleAddPatient = async (patientData) => {
-    await appendPatientData(selectedSheetId, patientData);
-    const updatedData = await getSheetData(selectedSheetId);
-    setSheetData(updatedData);
+  const handleAddPatient = () => {
+    setEditData(null);
+    setEditMode(false);
+    setShowForm(true);
   };
 
   const handleEdit = (index) => {
     const row = sheetData[index];
-    const [firstName, lastName, phone, age, gender, visitDate, nextVisit] = row;
-    setEditData({ firstName, lastName, phone, age, gender, visitDate, nextVisit, rowIndex: index });
+    const [patientId, name, location, age, phone, address, prescription, dose, visitDate, nextVisit, physicianId, physicianName, physicianPhone, bill] = row;
+    setEditData({
+      patientId, name, location, age, phone, address,
+      prescription, dose, visitDate, nextVisit,
+      physicianId, physicianName, physicianPhone, bill, rowIndex: index
+    });
     setEditMode(true);
     setShowForm(true);
   };
@@ -100,9 +106,7 @@ function App() {
     if (editMode && data.rowIndex != null) {
       await updatePatientData(selectedSheetId, data.rowIndex, data);
       setSearchTerm('');
-
-setShowSearch(false);
-
+      setShowSearch(false);
     } else {
       await appendPatientData(selectedSheetId, data);
     }
@@ -117,17 +121,21 @@ setShowSearch(false);
     const value = e.target.value.toLowerCase().trim();
     setSearchTerm(value);
     setShowSearch(value.length > 0);
-
     if (value.length === 0 || sheetData.length === 0) {
       setSearchResults([]);
       return;
     }
-
-    const results = sheetData.slice(1).filter((row) =>
-      row.some(cell => cell?.toString().toLowerCase().includes(value))
-    );
+  
+    const results = sheetData
+      .slice(1)
+      .map((row, idx) => ({ row, originalIndex: idx + 1 })) // +1 because header is at index 0
+      .filter(({ row }) =>
+        row.some(cell => cell?.toString().toLowerCase().includes(value))
+      );
+  
     setSearchResults(results);
   };
+  
 
   return (
     <>
@@ -143,15 +151,13 @@ setShowSearch(false);
 
       <Container sx={{ mt: 4 }}>
         <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Button variant="contained" onClick={fetchSheets}>
-              List Google Sheets
-            </Button>
-          </Grid>
+          {/* <Grid item xs={12}>
+            <Button variant="contained" onClick={fetchSheets}>List Google Sheets</Button>
+          </Grid> */}
 
           {sheets.length > 0 && (
             <Grid item xs={12}>
-              <Typography variant="h6">Available Sheets</Typography>
+              <Typography variant="h6">Select Available Google Sheets</Typography>
               <Grid container spacing={1}>
                 {sheets.map((sheet) => (
                   <Grid item key={sheet.id}>
@@ -168,7 +174,7 @@ setShowSearch(false);
             <>
               <Grid item xs={12}>
                 <TextField
-                  label="Search Patient"
+                  label="Search Patients"
                   variant="outlined"
                   fullWidth
                   value={searchTerm}
@@ -176,84 +182,48 @@ setShowSearch(false);
                 />
               </Grid>
 
-              {showSearch && (
-                <Grid item xs={12}>
-                  <Typography variant="h6">Search Results (Read Only)</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    * Search results are view-only. Use the main table below for editing or deleting.
-                  </Typography>
-                  <TableContainer component={Paper} sx={{ mt: 1 }}>
-                    <Table>
-                    <TableHead>
-  <TableRow>
-    {sheetData.length > 0 &&
-      sheetData[0].map((header, idx) => (
-        <TableCell key={idx}>{header}</TableCell>
-      ))}
-    <TableCell>Actions</TableCell>
-  </TableRow>
-</TableHead>
-
-                      <TableBody>
-  {searchResults.map((row, i) => {
-    const rowIndex = sheetData.findIndex(r => r.join() === row.join());
-    return (
-      <TableRow key={i}>
-        {row.map((cell, j) => (
-          <TableCell key={j}>{cell}</TableCell>
-        ))}
-        <TableCell>
-          <Button onClick={() => handleEdit(rowIndex)} size="small">Edit</Button>
-        </TableCell>
-      </TableRow>
-    );
-  })}
-</TableBody>
-
-                    </Table>
-                  </TableContainer>
-                </Grid>
-              )}
+              <Grid item xs={12}>
+                <Button variant="contained" onClick={handleAddPatient}>Add New Patient</Button>
+              </Grid>
 
               <Grid item xs={12}>
-                <Grid container justifyContent="space-between" alignItems="center">
-                  <Typography variant="h6">Patients List</Typography>
-                  <Button variant="contained" onClick={() => setShowForm(true)}>Add Patient</Button>
-                </Grid>
-
-                <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <TableContainer component={Paper}>
                   <Table>
-                    {sheetData.length > 0 && (
-                      <>
-                        <TableHead>
-                          <TableRow>
-                            {sheetData[0].map((header, idx) => (
-                              <TableCell key={idx}>{header}</TableCell>
-                            ))}
-                            <TableCell>Actions</TableCell>
-                          </TableRow>
-                        </TableHead>
+                    <TableHead>
+                      <TableRow>
+                      {/* patientId, name, location, age, phone, address, prescription, dose, visitDate, nextVisit, physicianId, physicianName, physicianPhone, bill] */}
+                        <TableCell>Patient ID</TableCell>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Location</TableCell>
+                        <TableCell>Age</TableCell>
+                        <TableCell>Phone</TableCell>
+                        <TableCell>Address</TableCell>
+                        <TableCell>Prescription</TableCell>
+                        <TableCell>Dose</TableCell>
+                        <TableCell>Visit Date</TableCell>
+                        <TableCell>Next Visit</TableCell>
+                        <TableCell>Physician Id</TableCell>
+                        <TableCell>Physician Name</TableCell>
+                        <TableCell>Physician Phone</TableCell>
+                        <TableCell>Bill</TableCell>
+                        <TableCell>Actions</TableCell>
 
-                        <TableBody>
-                          {sheetData.slice(1).map((row, i) => {
-                            const actualIndex = i + 1;
-                            const rowKey = row.join('-') + actualIndex;
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                    {(showSearch ? searchResults : sheetData.slice(1).map((row, idx) => ({ row, originalIndex: idx + 1 }))).map(({ row, originalIndex }, index) => (
+  <TableRow key={index}>
+    {row.map((cell, i) => (
+      <TableCell key={i}>{cell}</TableCell>
+    ))}
+    <TableCell>
+      <Button size="small" onClick={() => handleEdit(originalIndex)}>Edit</Button>
+      <Button size="small" color="error" onClick={() => handleDelete(originalIndex)}>Delete</Button>
+    </TableCell>
+  </TableRow>
+))}
 
-                            return (
-                              <TableRow key={rowKey}>
-                                {row.map((cell, j) => (
-                                  <TableCell key={j}>{cell}</TableCell>
-                                ))}
-                                <TableCell>
-                                  <Button onClick={() => handleEdit(actualIndex)} size="small">Edit</Button>
-                                  <Button onClick={() => handleDelete(actualIndex)} size="small" color="error">Delete</Button>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </>
-                    )}
+                    </TableBody>
                   </Table>
                 </TableContainer>
               </Grid>
@@ -264,14 +234,10 @@ setShowSearch(false);
 
       <PatientForm
         open={showForm}
-        handleClose={() => {
-          setShowForm(false);
-          setEditData(null);
-          setEditMode(false);
-        }}
+        handleClose={() => setShowForm(false)}
         handleSubmit={handleFormSubmit}
-        editMode={editMode}
         editData={editData}
+        editMode={editMode}
       />
     </>
   );

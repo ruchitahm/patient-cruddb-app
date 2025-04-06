@@ -80,36 +80,76 @@ export async function listGoogleSheets() {
     });
   }
   
-  export const appendPatientData = async (spreadsheetId, data) => {
-    const values = [
-      [data.firstName, data.lastName, data.phone, data.age, data.gender, data.visitDate, data.nextVisit]
-    ];
+//   export const appendPatientData = async (spreadsheetId, data) => {
+//     const values = [
+//     //   [data.firstName, data.lastName, data.phone, data.age, data.gender, data.visitDate, data.nextVisit]
+//     [data.patientId,
+//         data.name,
+//         data.location,
+//         data.age,
+//         data.phone,
+//         data.address,
+//         data.prescription,
+//         data.dose,
+//         data.visitDate,
+//         data.nextVisit,
+//         data.physicianId,
+//         data.physicianName,
+//         data.physicianPhone,
+//         data.bill]
+//     ];
   
-    try {
-      await gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: 'Sheet1',
-        valueInputOption: 'USER_ENTERED',
-        resource: { values },
-      });
-      console.log('Patient added successfully');
-    } catch (error) {
-      console.error('Error appending patient:', error);
-    }
-  };
+//     try {
+//       await gapi.client.sheets.spreadsheets.values.append({
+//         spreadsheetId,
+//         range: 'Sheet1',
+//         valueInputOption: 'USER_ENTERED',
+//         resource: { values },
+//       });
+//       console.log('Patient added successfully');
+//     } catch (error) {
+//       console.error('Error appending patient:', error);
+//     }
+//   };
   
-  export const updatePatientData = async (spreadsheetId, rowIndex, data) => {
+  export const appendPatientData = async (sheetId, data) => {
     const values = [[
-      data.firstName,
-      data.lastName,
-      data.phone,
-      data.age,
-      data.gender,
-      data.visitDate,
-      data.nextVisit
+      data.patientId, data.name, data.location, data.age, data.phone,
+      data.address, data.prescription, data.dose, data.visitDate,
+      data.nextVisit, data.physicianId, data.physicianName, data.physicianPhone, data.bill
     ]];
   
-    const range = `Sheet1!A${rowIndex + 1}:G${rowIndex + 1}`;
+    const body = { values };
+  
+    await gapi.client.sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: 'Sheet1', // ✅ Use sheet name only — no cell reference
+      valueInputOption: 'RAW',
+      insertDataOption: 'INSERT_ROWS',
+      resource: body
+    });
+  };
+
+  
+  export const updatePatientData = async (spreadsheetId, rowIndex, data) => {
+    const values = [[      
+      data.patientId,
+      data.name,
+      data.location,
+      data.age,
+      data.phone,
+      data.address,
+      data.prescription,
+      data.dose,
+      data.visitDate,
+      data.nextVisit,
+      data.physicianId,
+      data.physicianName,
+      data.physicianPhone,
+      data.bill
+    ]];
+  
+    const range = `Sheet1!A${rowIndex + 1}:N${rowIndex + 1}`;
   
     try {
       await gapi.client.sheets.spreadsheets.values.update({
@@ -125,19 +165,28 @@ export async function listGoogleSheets() {
   };
   
   export const deletePatientData = async (spreadsheetId, rowIndex) => {
-    const emptyRow = [['', '', '', '', '', '', '']];
-    const range = `Sheet1!A${rowIndex + 1}:G${rowIndex + 1}`;
-  
     try {
-      await gapi.client.sheets.spreadsheets.values.update({
+      await gapi.client.sheets.spreadsheets.batchUpdate({
         spreadsheetId,
-        range,
-        valueInputOption: 'RAW',
-        resource: { values: emptyRow },
+        resource: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId: 0, // Sheet1 is usually sheetId 0. Confirm if needed.
+                  dimension: 'ROWS',
+                  startIndex: rowIndex,
+                  endIndex: rowIndex + 1,
+                },
+              },
+            },
+          ],
+        },
       });
-      console.log('Patient deleted');
+      console.log('Row deleted');
     } catch (error) {
       console.error('Delete error:', error);
     }
   };
+  
   
