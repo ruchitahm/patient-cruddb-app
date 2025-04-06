@@ -1,0 +1,146 @@
+client id = 225322870152-ugf2ri5olei5i6iprlpacl88ekji5hep.apps.googleusercontent.com
+api id= AIzaSyA646MBPIZ99sXj7UIDdlw8SNzhae_HACc
+<!-- 
+import React, { useState, useEffect } from 'react';
+import {
+  initGoogleAPI,
+  signIn,
+  signOut,
+  isSignedIn,
+  listGoogleSheets,
+  getSheetData,
+  loadSheetsAPI,
+  appendPatientData,
+} from './services/googleDriveService';
+
+import AddPatientForm from './components/AddPatientForm'; // ⬅️ New form component
+
+function App() {
+  const [sheets, setSheets] = useState([]);
+  const [selectedSheetId, setSelectedSheetId] = useState(null);
+  const [sheetData, setSheetData] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+
+  useEffect(() => {
+    initGoogleAPI();
+  }, []);
+
+  const handleLogin = async () => {
+    await signIn();
+    if (isSignedIn()) {
+      console.log("User signed in!");
+      fetchSheets();
+    }
+  };
+
+  const handleLogout = () => {
+    signOut();
+    setSheets([]);
+    setSelectedSheetId(null);
+    setSheetData([]);
+    console.log("User signed out!");
+  };
+
+  const fetchSheets = async () => {
+    try {
+      const result = await listGoogleSheets();
+      setSheets(result);
+    } catch (error) {
+      console.error('Error fetching sheets:', error);
+    }
+  };
+
+  const handleSheetSelect = async (id) => {
+    await loadSheetsAPI();
+    setSelectedSheetId(id);
+    const data = await getSheetData(id);
+    setSheetData(data);
+  };
+
+  const handleAddPatient = async (patientData) => {
+    const orderedData = [
+      patientData.patientId,
+      patientData.name,
+      patientData.location,
+      patientData.age,
+      patientData.address,
+      patientData.phone,
+      patientData.physicianId,
+      patientData.physicianName,
+      patientData.physicianPhone,
+      patientData.visitDate,
+      patientData.nextVisit,
+      patientData.prescription,
+      patientData.dose,
+      patientData.bill
+    ];
+  
+    try {
+      await appendPatientData(selectedSheetId, orderedData);
+      const updatedData = await getSheetData(selectedSheetId);
+      setSheetData(updatedData);
+    } catch (err) {
+      console.error("Error adding patient:", err);
+    }
+  };
+  
+
+  return (
+    <div style={{ padding: "1rem" }}>
+      <h1>Patient Database App</h1>
+
+      <div style={{ marginBottom: "1rem" }}>
+        <button onClick={handleLogin}>Sign in with Google</button>
+        <button onClick={handleLogout}>Sign out</button>
+        <button onClick={fetchSheets}>List Google Sheets</button>
+      </div>
+
+      {sheets.length > 0 && (
+        <>
+          <h2>Google Sheets in Your Drive</h2>
+          <ul>
+            {sheets.map((sheet) => (
+              <li key={sheet.id}>
+                <button onClick={() => handleSheetSelect(sheet.id)}>
+                  {sheet.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {selectedSheetId && (
+        <div style={{ marginTop: "2rem" }}>
+          <button onClick={() => setShowForm(true)}>Add Patient</button>
+
+          {showForm && (
+            <AddPatientForm
+              onClose={() => setShowForm(false)}
+              onSubmit={handleAddPatient}
+            />
+          )}
+
+          <h3>Data from selected sheet:</h3>
+          {sheetData.length > 0 ? (
+            <table border="1" cellPadding="8">
+              <tbody>
+                {sheetData.map((row, i) => (
+                  <tr key={i}>
+                    {row.map((cell, j) => (
+                      <td key={j}>{cell}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>Loading sheet data...</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App; -->
